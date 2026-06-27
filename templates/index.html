@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobGuard — Fake Job Detector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #0a0e1a;
+      --surface:   #111827;
+      --card:      #1a2235;
+      --border:    #1f2d47;
+      --accent:    #3b82f6;
+      --accent2:   #60a5fa;
+      --danger:    #ef4444;
+      --danger-bg: #1f0a0a;
+      --success:   #22c55e;
+      --success-bg:#0a1f12;
+      --warn:      #f59e0b;
+      --warn-bg:   #1a1105;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --mono:      'JetBrains Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 0 1rem 4rem;
+    }
+
+    /* ── HEADER ── */
+    header {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 0 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-mark {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .logo-text h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
+    .logo-text p  { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      max-width: 860px;
+      margin: 1.5rem auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .75rem 1rem;
+    }
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 1.3rem;
+      font-weight: 500;
+      color: var(--accent2);
+    }
+    .stat-label { font-size: 0.7rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── MAIN GRID ── */
+    .main {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    /* ── FORM PANEL ── */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .panel-title {
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 1.2rem;
+    }
+
+    label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 4px; margin-top: 1rem; }
+    label:first-of-type { margin-top: 0; }
+
+    input, textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: .88rem;
+      padding: .55rem .8rem;
+      transition: border-color .15s;
+      outline: none;
+      resize: vertical;
+    }
+    input:focus, textarea:focus { border-color: var(--accent); }
+    textarea { min-height: 90px; }
+
+    .examples {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin: 1rem 0 .5rem;
+    }
+    .ex-btn {
+      font-size: 11px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .ex-btn:hover { border-color: var(--accent); color: var(--text); }
+    .ex-btn.fake-ex { border-color: #3f1515; color: #f87171; }
+    .ex-btn.fake-ex:hover { background: var(--danger-bg); border-color: var(--danger); }
+
+    .btn-analyse {
+      width: 100%;
+      margin-top: 1.2rem;
+      background: linear-gradient(135deg, #3b82f6, #6366f1);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-family: inherit;
+      font-size: .9rem;
+      font-weight: 600;
+      padding: .75rem;
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      letter-spacing: .01em;
+    }
+    .btn-analyse:hover   { opacity: .9; }
+    .btn-analyse:active  { transform: scale(.98); }
+    .btn-analyse.loading { opacity: .6; cursor: not-allowed; }
+
+    /* ── RESULT PANEL ── */
+    #result-panel { display: none; }
+
+    .verdict-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: .6rem 1.2rem;
+      border-radius: 10px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      font-family: var(--mono);
+      letter-spacing: .03em;
+    }
+    .verdict-badge.FAKE {
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+    .verdict-badge.REAL {
+      background: var(--success-bg);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    .prob-label { font-size: .75rem; color: var(--muted); width: 90px; flex-shrink: 0; }
+    .prob-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: var(--surface);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .prob-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+    }
+    .prob-bar.fake-bar  { background: linear-gradient(90deg, #f97316, #ef4444); }
+    .prob-bar.real-bar  { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .prob-val {
+      font-family: var(--mono);
+      font-size: .85rem;
+      color: var(--text);
+      width: 42px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .signal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin: 1rem 0;
+    }
+    .signal-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: .75rem;
+      padding: .4rem .6rem;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+    .sig-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sig-dot.on  { background: var(--danger); }
+    .sig-dot.off { background: var(--muted); }
+
+    .flags-section { margin-top: 1rem; }
+    .flags-title { font-size: .75rem; color: var(--muted); margin-bottom: 6px; }
+    .flag-tag {
+      display: inline-block;
+      background: var(--danger-bg);
+      border: 1px solid #3f1515;
+      color: #f87171;
+      font-size: .7rem;
+      font-family: var(--mono);
+      border-radius: 4px;
+      padding: 2px 7px;
+      margin: 3px;
+    }
+    .no-flags { font-size: .78rem; color: var(--success); }
+
+    .confidence-chip {
+      display: inline-block;
+      font-size: .7rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      margin-left: 8px;
+    }
+    .conf-High   { background: #1a3a1a; color: #4ade80; }
+    .conf-Medium { background: #2a2010; color: #fbbf24; }
+    .conf-Low    { background: #1a1a2a; color: #818cf8; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 280px;
+      color: var(--muted);
+      text-align: center;
+      gap: 10px;
+    }
+    .empty-state .icon { font-size: 2.5rem; opacity: .4; }
+    .empty-state p     { font-size: .82rem; line-height: 1.5; max-width: 200px; }
+
+    /* ── HOW IT WORKS ── */
+    .how {
+      max-width: 860px;
+      margin: 1.5rem auto 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+    }
+    .how-title { font-size: .8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1rem; }
+    .how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .how-step  { text-align: center; }
+    .how-num   { font-family: var(--mono); font-size: 1.2rem; color: var(--accent); font-weight: 500; }
+    .how-text  { font-size: .73rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+    footer {
+      max-width: 860px;
+      margin: 2rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-size: .72rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 640px) {
+      .main       { grid-template-columns: 1fr; }
+      .stats-bar  { grid-template-columns: repeat(2, 1fr); }
+      .how-steps  { grid-template-columns: repeat(2, 1fr); }
+      .signal-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-mark">🛡️</div>
+  <div class="logo-text">
+    <h1>JobGuard</h1>
+    <p>ML-powered fake job posting detector · EMSCAD Dataset · TF-IDF + Logistic Regression</p>
+  </div>
+</header>
+
+<!-- MODEL STATS -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-val">{{ "%.1f"|format(metrics.auc_roc * 100) }}%</div>
+    <div class="stat-label">AUC-ROC</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">{{ "%.1f"|format(metrics.f1_score * 100) }}%</div>
+    <div class="stat-label">F1 Score</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">{{ "%.1f"|format(metrics.recall * 100) }}%</div>
+    <div class="stat-label">Recall</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">{{ "{:,}".format(metrics.total_samples) }}</div>
+    <div class="stat-label">Training Samples</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- FORM -->
+  <div class="panel">
+    <div class="panel-title">Paste a Job Posting</div>
+
+    <label>Job Title *</label>
+    <input id="title" type="text" placeholder="e.g. Data Analyst, Software Engineer" />
+
+    <label>Company / Profile</label>
+    <input id="company" type="text" placeholder="e.g. Infosys, TCS, Google" />
+
+    <label>Job Description *</label>
+    <textarea id="description" placeholder="Paste the full job description here..."></textarea>
+
+    <label>Requirements</label>
+    <textarea id="requirements" placeholder="Paste requirements or skills needed..." style="min-height:60px"></textarea>
+
+    <div style="margin-top:1rem">
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px">Try an example:</div>
+      <div class="examples">
+        <button class="ex-btn" onclick="loadExample('real1')">✅ Real — Software Eng</button>
+        <button class="ex-btn" onclick="loadExample('real2')">✅ Real — Data Analyst</button>
+        <button class="ex-btn fake-ex" onclick="loadExample('fake1')">🚨 Fake — WFH Scam</button>
+        <button class="ex-btn fake-ex" onclick="loadExample('fake2')">🚨 Fake — Data Entry</button>
+      </div>
+    </div>
+
+    <button class="btn-analyse" id="analyseBtn" onclick="analyse()">🔍 Analyse Job Posting</button>
+  </div>
+
+  <!-- RESULT -->
+  <div class="panel" id="result-panel">
+    <div class="panel-title">Analysis Result</div>
+    <div id="result-content"></div>
+  </div>
+
+  <div class="panel" id="empty-panel" style="display:flex;align-items:center;justify-content:center">
+    <div class="empty-state">
+      <div class="icon">🔍</div>
+      <p>Paste a job posting on the left and hit Analyse to check it.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="how">
+  <div class="how-title">How it works</div>
+  <div class="how-steps">
+    <div class="how-step">
+      <div class="how-num">01</div>
+      <div class="how-text">Text fields are cleaned and combined into a single feature</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">02</div>
+      <div class="how-text">TF-IDF vectoriser converts text into 15K weighted n-gram features</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">03</div>
+      <div class="how-text">Logistic Regression (class-balanced) outputs a fraud probability</div>
+    </div>
+    <div class="how-step">
+      <div class="how-num">04</div>
+      <div class="how-text">Heuristic signals (urgency, pay, company info) augment the score</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <span>Built by Prachi Gautam · MSc Data Science, SRMIST · Dataset: EMSCAD (Kaggle)</span>
+  <span>Model: TF-IDF + Logistic Regression · Balanced class weights</span>
+</footer>
+
+<script>
+const EXAMPLES = {
+  real1: {
+    title: "Software Engineer — Backend",
+    company: "Infosys Limited",
+    description: "We are looking for a skilled backend engineer to join our cloud infrastructure team in Pune. You will design and maintain scalable microservices using Python and Go, work with PostgreSQL and Redis, and collaborate with cross-functional teams. Strong DSA fundamentals and experience with REST APIs required.",
+    requirements: "3+ years Python or Go. Experience with cloud (AWS/GCP). Strong problem-solving skills. B.Tech/M.Tech in Computer Science preferred."
+  },
+  real2: {
+    title: "Data Analyst",
+    company: "Bajaj Finserv",
+    description: "Join our data analytics team to drive insights for our consumer lending business. You will work with large structured datasets, build dashboards in Power BI, and develop predictive models for customer segmentation and risk assessment. Pune office, hybrid working.",
+    requirements: "SQL, Python (pandas, scikit-learn). Power BI or Tableau. Experience with financial data a plus. MSc/B.Tech in relevant field."
+  },
+  fake1: {
+    title: "URGENT HIRING — Work From Home Agent — Earn ₹50,000/month!!",
+    company: "",
+    description: "NO EXPERIENCE NEEDED!! Earn BIG from the comfort of your home. We are hiring IMMEDIATELY across India. Work just 2-3 hours per day and earn GUARANTEED ₹50,000 every month. No interviews. Immediate joining. Limited slots available — HURRY UP!! Send your resume on WhatsApp NOW.",
+    requirements: "Anyone can apply! No qualifications needed. Just a smartphone and internet connection."
+  },
+  fake2: {
+    title: "Online Data Entry Operator — Immediate Joining",
+    company: "",
+    description: "Earn money from home doing simple online data entry work. We provide training. No experience required. Earn ₹15,000-₹25,000 per week guaranteed. To get started send your details on Telegram @dataentryindia. Pay a small registration fee of ₹500 to receive your first assignment.",
+    requirements: "Basic computer knowledge. Must be able to pay registration fee. No other qualifications needed."
+  }
+};
+
+function loadExample(key) {
+  const e = EXAMPLES[key];
+  document.getElementById("title").value       = e.title;
+  document.getElementById("company").value     = e.company;
+  document.getElementById("description").value = e.description;
+  document.getElementById("requirements").value= e.requirements;
+}
+
+async function analyse() {
+  const btn = document.getElementById("analyseBtn");
+  btn.textContent = "Analysing…";
+  btn.classList.add("loading");
+  btn.disabled = true;
+
+  const payload = {
+    title:        document.getElementById("title").value,
+    company:      document.getElementById("company").value,
+    description:  document.getElementById("description").value,
+    requirements: document.getElementById("requirements").value
+  };
+
+  try {
+    const res  = await fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    renderResult(data);
+  } catch(e) {
+    alert("Something went wrong — make sure Flask is running.");
+  } finally {
+    btn.textContent = "🔍 Analyse Job Posting";
+    btn.classList.remove("loading");
+    btn.disabled = false;
+  }
+}
+
+function renderResult(d) {
+  document.getElementById("empty-panel").style.display = "none";
+  document.getElementById("result-panel").style.display = "block";
+
+  const isFake     = d.verdict === "FAKE";
+  const fakeProb   = d.probability;
+  const realProb   = (100 - fakeProb).toFixed(1);
+  const icon       = isFake ? "🚨" : "✅";
+
+  const signalLabels = {
+    urgency_language:   "Urgency language",
+    unrealistic_pay:    "Unrealistic pay claims",
+    no_screening:       "No screening process",
+    suspicious_contact: "Suspicious contact method",
+    poor_company_info:  "Missing company info"
+  };
+
+  const signalsHTML = Object.entries(d.signals).map(([k, v]) => `
+    <div class="signal-item">
+      <div class="sig-dot ${v ? 'on' : 'off'}"></div>
+      <span style="color:${v ? '#f87171' : 'var(--muted)'}">${signalLabels[k]}</span>
+    </div>
+  `).join("");
+
+  const flagsHTML = d.red_flags.length
+    ? d.red_flags.map(f => `<span class="flag-tag">${f}</span>`).join("")
+    : `<span class="no-flags">✓ No red-flag phrases detected</span>`;
+
+  document.getElementById("result-content").innerHTML = `
+    <div class="verdict-badge ${d.verdict}">
+      ${icon} ${d.verdict}
+      <span class="confidence-chip conf-${d.confidence}">${d.confidence} confidence</span>
+    </div>
+
+    <div class="prob-row">
+      <div class="prob-label">Fake probability</div>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar fake-bar" id="fakeBar" style="width:0%"></div>
+      </div>
+      <div class="prob-val">${fakeProb}%</div>
+    </div>
+
+    <div class="prob-row">
+      <div class="prob-label">Real probability</div>
+      <div class="prob-bar-wrap">
+        <div class="prob-bar real-bar" id="realBar" style="width:0%"></div>
+      </div>
+      <div class="prob-val">${realProb}%</div>
+    </div>
+
+    <div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem">Signal Breakdown</div>
+    <div class="signal-grid">${signalsHTML}</div>
+
+    <div class="flags-section">
+      <div class="flags-title">Red-flag phrases detected</div>
+      ${flagsHTML}
+    </div>
+  `;
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.getElementById("fakeBar").style.width = fakeProb + "%";
+    document.getElementById("realBar").style.width = realProb + "%";
+  }, 50);
+}
+</script>
+</body>
+</html>
