@@ -1,11 +1,11 @@
-# 🛡️ JobGuard — Fake Job Posting Detector
+# JobGuard — Fake Job Posting Detector
 
 > ML-powered classifier that detects fraudulent job postings using NLP.  
 > Built by **Prachi Gautam** · MSc Data Science, SRMIST
 
 ---
 
-## 📊 Model Performance (Real EMSCAD Dataset)
+## Model Performance (Real EMSCAD Dataset)
 
 | Metric     | Score  |
 |------------|--------|
@@ -17,7 +17,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Clone and install
 ```bash
@@ -69,7 +69,7 @@ Interactive Web Dashboard (Flask)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 fake_job_detector/
@@ -86,13 +86,13 @@ fake_job_detector/
 
 ---
 
-## 💼 Resume Bullet
+## Resume Bullet
 
 > "Built JobGuard, an NLP classifier detecting fake job postings (EMSCAD, 17.8K samples) — TF-IDF + Logistic Regression achieving **97% AUC-ROC** with class-balanced training; deployed as an interactive Flask web app with real-time signal analysis."
 
 ---
 
-## 🔮 Future Scope (for Version 2)
+## Future Scope (for Version 2)
 
 - [ ] Fine-tune DistilBERT for improved recall on edge cases
 - [ ] Add company domain verification (WHOIS lookup)
